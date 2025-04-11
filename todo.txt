@@ -1,0 +1,10 @@
+Revise Binary operations --> done
+
+Handle Function Original Block --> done
+
+generate Symbol Table --> done
+
+Syntax Error handling
+IDE Creating
+
+Clean the yacc and lex

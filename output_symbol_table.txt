@@ -1,0 +1,7 @@
+ID   		Name           		Type           		DataType       		Line 		Scope          		isInitialized  		Value
+1    		z              		variable       		int            		3    		blk0.blk1.blk2 		false          		
+2    		y              		variable       		int            		0    		blk0.blk1      		true           		
+3    		x              		variable       		int            		0    		blk0.blk1      		true           		
+4    		f              		function       		int            		6    		blk0           		true           		
+5    		x              		parameter      		int            		6    		blk0.f         		-              		
+6    		y              		parameter      		int            		6    		blk0.f         		-              		
