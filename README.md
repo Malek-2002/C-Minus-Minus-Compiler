@@ -1,4 +1,4 @@
-# ZCompi Compiler
+# C Minus Minus Compiler
 
 A compiler for a custom programming language that supports various programming constructs including variables, functions, control structures, and type checking.
 
@@ -51,13 +51,13 @@ bison -d parser.ypp
 
 2. Compile the project:
 ```bash
-g++ -std=c++11 -o zcompi *.cpp
+g++ -std=c++11 -o compiler *.cpp
 ```
 
 ## Usage
 
 ```bash
-./zcompi <input_file>
+./compiler <input_file>
 ```
 
 The compiler will:
@@ -111,7 +111,3 @@ The compiler provides detailed error messages including:
 - **Factory Method Pattern**: For type checker creation
 - **Composite Pattern**: For AST nodes
 - **Visitor Pattern**: For type checking and code generation
-
-## License
-
-[Add your license information here] 
