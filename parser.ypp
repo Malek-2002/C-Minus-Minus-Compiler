@@ -43,7 +43,6 @@ std::vector<std::unique_ptr<ASTNode>> getAndClearArguments() {
     args.swap(currentArguments);
     return args;
 }
-
 %}
 
 %union {
@@ -83,7 +82,7 @@ std::vector<std::unique_ptr<ASTNode>> getAndClearArguments() {
 %type <node> PROGRAM
 
 
-%token INT FLOAT STRING CHAR BOOL VOID 
+%token INT FLOAT STRING CHAR BOOL VOID CONSTANT
 %token PRINT RETURN 
 %token LOGICAL_AND LOGICAL_OR LOGICAL_NOT
 %token EQUAL NOT_EQUAL
@@ -103,6 +102,9 @@ std::vector<std::unique_ptr<ASTNode>> getAndClearArguments() {
 %left MUL DIV MOD
 %right POW
 %right LOGICAL_NOT
+%right UMINUS
+/* %precedence FUNC_CALL_PREC */
+/* %nonassoc FUNC_CALL_PREC */
 
 %%
 PROGRAM:
@@ -139,7 +141,7 @@ STATEMENT:
         | DO_WHILE_STATEMENT { $$ = $1; }
         | FOR_STATEMENT { $$ = $1; }
         | BREAK_STATEMENT { $$ = $1; }
-        | EXPRESSION { $$ = $1; }
+        /* | EXPRESSION { $$ = $1; } */
         | PRINT_STATEMENT { $$ = $1; }
         | BLOCK { $$ = $1; }
         | RETURN_STATEMENT SEMICOLON { $$ = $1; }
@@ -175,9 +177,9 @@ EXPRESSION:
         
         | '(' EXPRESSION ')'  { $$ = $2; }
         
-        | FUNC_CALL { $$ = $1; }
+        |  FUNC_CALL { $$ = $1; }
 
-        | SUB EXPRESSION { 
+        | SUB EXPRESSION  %prec UMINUS { 
             $$ = new UnaryOpNode("-", std::unique_ptr<ASTNode>($2), yylineno);
         }          
         | LOGICAL_NOT EXPRESSION {
@@ -499,6 +501,14 @@ DECLARATION_STATEMENT:
             $$ = new DeclarationNode(*$1, *$2, false, nullptr, currBlock, yylineno);
             delete $1;
             delete $2;
+        }
+        | CONSTANT TYPE IDENTIFIER EQ EXPRESSION SEMICOLON { 
+            $$ = new DeclarationNode(*$2, *$3, true, std::unique_ptr<ASTNode>($5), currBlock, yylineno);
+            delete $2;
+            delete $3;
+        }
+        | CONSTANT TYPE IDENTIFIER SEMICOLON { 
+            ErrorHandler::getInstance()->reportError("Error declaring const variable without initialization", yylineno);
         }
         ;
 

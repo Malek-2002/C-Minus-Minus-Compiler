@@ -451,22 +451,6 @@ public:
 };
 
 /********************************
- * Visitor Pattern for Type Checking & Code Generation
- ********************************/
-class Visitor {
-public:
-    virtual ~Visitor() = default;
-    virtual void visit(LiteralNode* node) = 0;
-    virtual void visit(IdentifierNode* node) = 0;
-    virtual void visit(UnaryOpNode* node) = 0;
-    virtual void visit(BinaryOpNode* node) = 0;
-    virtual void visit(DeclarationNode* node) = 0;
-    virtual void visit(AssignmentNode* node) = 0;
-    virtual void visit(PrintNode* node) = 0;
-    virtual void visit(BlockNode* node) = 0;
-};
-
-/********************************
  * QuadruplesGenerator (Code Generator)
  ********************************/
 class QuadruplesGenerator {

@@ -27,7 +27,7 @@ fi
 
 # Step 3: Compile all source files
 echo "Compiling project..."
-g++ -std=c++17 -o calc lex.yy.c parser.tab.cpp main.cpp handler.cpp symbol_table_generator.cpp
+g++ -std=c++17 -o calc lex.yy.c parser.tab.cpp main.cpp handler.cpp symbol_table_generator.cpp error_handler.cpp
 if [ $? -ne 0 ]; then
     echo "Compilation failed"
     cleanup

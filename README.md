@@ -1,6 +1,17 @@
-# C Minus Minus Compiler
+# ZCompi Compiler
 
 A compiler for a custom programming language that supports various programming constructs including variables, functions, control structures, and type checking.
+
+## Technical Overview
+
+- **Lexical Analysis**: Efficient tokenization using Flex, supporting complex patterns and whitespace handling.
+- **Syntax Analysis**: Robust parsing with Bison, implementing a context-free grammar for language constructs.
+- **Type System**: Comprehensive type checking with support for type promotion and operator overloading.
+- **Symbol Table Management**: Hierarchical symbol table with scope resolution and efficient lookup.
+- **Intermediate Code Generation**: Quadruple-based intermediate representation for optimized code generation.
+- **Error Recovery**: Graceful error handling with detailed diagnostics and recovery mechanisms.
+- **Memory Management**: Smart pointer-based AST node management for automatic memory cleanup.
+- **Thread Safety**: Designed for potential multi-threaded compilation with synchronized error reporting.
 
 ## Features
 
@@ -51,13 +62,13 @@ bison -d parser.ypp
 
 2. Compile the project:
 ```bash
-g++ -std=c++11 -o compiler *.cpp
+g++ -std=c++11 -o zcompi *.cpp
 ```
 
 ## Usage
 
 ```bash
-./compiler <input_file>
+./zcompi <input_file>
 ```
 
 The compiler will:
@@ -111,3 +122,7 @@ The compiler provides detailed error messages including:
 - **Factory Method Pattern**: For type checker creation
 - **Composite Pattern**: For AST nodes
 - **Visitor Pattern**: For type checking and code generation
+
+## License
+
+[Add your license information here] 

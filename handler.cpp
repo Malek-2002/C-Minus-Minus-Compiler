@@ -414,11 +414,8 @@ bool Symbol::checkInitialization() const
 
 void Symbol::setValue(const std::string &newValue)
 {
-    if (!isConst)
-    {
-        value = newValue;
-        isInitialized = true;
-    }
+    value = newValue;
+    isInitialized = true;
 }
 
 void Symbol::setIsConst(bool constStatus)
