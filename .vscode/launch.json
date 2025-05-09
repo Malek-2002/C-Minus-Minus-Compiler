@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Calculator",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/calc",
+            "args": ["${workspaceFolder}/input.txt"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "cmake-build-debug",
+            "logging": {
+                "moduleLoad": false,
+                "engineLogging": false,
+                "trace": false
+            }
+        }
+    ]
+}

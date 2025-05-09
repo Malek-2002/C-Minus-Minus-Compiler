@@ -1,0 +1,9 @@
+ID,Name,Type,DataType,Line,Scope,isInitialized,isUsed,Value
+7,scoped,variable,int,3,blk0.blk1,true,true,0
+6,i,variable,int,4,blk0.blk1,true,true,0
+2,scoped,variable,int,7,blk0.blk1.blk2,true,true,5
+1,scoped,variable,int,11,blk0.blk1.blk2.blk3,true,true,10
+5,scoped,variable,int,17,blk0.blk1.blk4,true,true,5
+4,scoped,variable,int,20,blk0.blk1.blk4.blk5,true,true,10
+3,scoped,variable,int,23,blk0.blk1.blk4.blk5.blk6,true,false,2
+8,main,function,int,29,blk0,true,false,

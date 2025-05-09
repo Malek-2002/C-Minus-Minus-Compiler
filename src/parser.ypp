@@ -1,0 +1,564 @@
+%{
+#include <iostream>
+#include <string>
+#include <vector>
+#include <memory>
+#include <stack>
+
+
+// Include headers from the new directory structure
+// Include headers from the new directory structure
+#include "ast/ast_node.hpp"
+#include "ast/block_node.hpp"
+#include "ast/expression_nodes.hpp"
+#include "ast/statement_nodes.hpp"
+#include "ast/control_flow_nodes.hpp"
+#include "ast/function_nodes.hpp"
+#include "error/error_handler.hpp"
+#include "semantic/symbol.hpp"
+#include "semantic/symbol_table.hpp"
+#include "codegen/quadruples_generator.hpp"
+
+int yylex();
+void yyerror(const char* s);
+extern int yylineno;  // Needed to track line numbers
+
+// Global objects
+extern BlockNode* currBlock;
+// Stack to keep track of loop labels for break stmts
+std::vector<std::string> loopEndLabels;
+
+// Global variables for function parameter and argument handling
+std::vector<std::pair<std::string, std::string>> currentParameters;
+std::vector<std::unique_ptr<ASTNode>> currentArguments;
+std::vector<std::pair<std::unique_ptr<ASTNode>, std::unique_ptr<BlockNode>>> caseexprs;
+std::unique_ptr<BlockNode> defaultBlock = nullptr;
+
+std::string curr_function_name = "";
+std::string curr_function_type = "";
+bool curr_func_return_shown = false;
+bool function_declared = false;
+int lable_num = 0;
+std::stack<std::string> endLabelsStack;
+std::stack<std::string> continueLabelsStack;
+std::stack<int> loopCntStack;
+int blockIdCounter = 0;
+// Helper function to clear parameter list
+void clearParameters() {
+    currentParameters.clear();
+}
+
+// Helper function to add a parameter
+void addParameter(const std::string& type, const std::string& name) {
+    currentParameters.push_back(std::make_pair(type, name));
+}
+
+// Helper function to get and clear arguments
+std::vector<std::unique_ptr<ASTNode>> getAndClearArguments() {
+    std::vector<std::unique_ptr<ASTNode>> args;
+    args.swap(currentArguments);
+    return args;
+}
+%}
+
+%define parse.error verbose
+
+
+%union {
+    std::string* strVal;
+    ASTNode* node;
+    BlockNode* blockNode;
+    int intVal;
+    float floatVal;
+    bool boolVal;
+    char charVal;
+}
+
+%token <strVal> IDENTIFIER STRING_VALUE
+%token <charVal> CHAR_VALUE  
+%token <intVal> INT_VALUE
+%token <floatVal> FLOAT_VALUE
+%token <boolVal> BOOL_VALUE
+
+%type <node> expr
+%type <strVal> type
+%type <node> stmt 
+            declr_stmt 
+            assign_stmt 
+            print_stmt 
+            if_stmt 
+            opt_else_if_stmt 
+            while_stmt 
+            do_while_stmt 
+            for_stmt 
+            function_call_stmt 
+            function_declr_stmt 
+            return_stmt 
+            switch_stmt
+            break_stmt
+            case_stmt
+            continue_stmt
+%type <blockNode> BLOCK
+%type <node> program
+
+
+%token INT FLOAT STRING CHAR BOOL VOID CONSTANT
+%token PRINT RETURN 
+%token LOGICAL_AND LOGICAL_OR LOGICAL_NOT
+%token EQUAL NOT_EQUAL
+%token GT LT GTE LTE EQ
+%token SEMICOLON MOD ADD SUB MUL DIV BITWISE_XOR BITWISE_OR BITWISE_AND SHL SHR
+%token SWITCH BREAK CASE DEFAULT IF ELSE FOR WHILE DO CONTINUE
+
+%right EQ
+%left LOGICAL_OR
+%left LOGICAL_AND
+%left BITWISE_OR
+%left BITWISE_AND
+%left EQUAL NOT_EQUAL
+%left GT LT GTE LTE
+%left SHL SHR
+%left ADD SUB
+%left MUL DIV MOD
+%left BITWISE_XOR
+%right LOGICAL_NOT
+%right UMINUS
+/* %precedence function_call_stmt_PREC */
+/* %nonassoc function_call_stmt_PREC */
+
+%%
+program:
+        program stmt  { 
+            if ($2 != nullptr) {
+                currBlock->addStatement(std::unique_ptr<ASTNode>($2)); 
+            }
+            $$ = nullptr;
+        }        
+        | { $$ = nullptr; }
+        ;
+
+//################################################### BLOCK ################################################
+BLOCK:
+        '{' {
+            // Create a new block with the current block as parent
+            BlockNode* newBlock = new BlockNode(++blockIdCounter, currBlock);
+            currBlock = newBlock;
+        } program '}' {
+            // Set the result to the current block
+            $$ = currBlock;
+            // Restore parent block
+            currBlock = currBlock->getParent();
+        }
+        ;
+
+//################################################### statement ################################################
+stmt:
+        declr_stmt { $$ = $1; }
+        | assign_stmt { $$ = $1; }
+        | expr SEMICOLON { $$ = $1; }
+        | if_stmt { $$ = $1; }
+        | while_stmt { $$ = $1; } 
+        | do_while_stmt { $$ = $1; }
+        | for_stmt { $$ = $1; }
+        | break_stmt { $$ = $1; }
+        /* | expr { $$ = $1; } */
+        | print_stmt { $$ = $1; }
+        | BLOCK { $$ = $1; }
+        | return_stmt SEMICOLON { $$ = $1; }
+        | function_declr_stmt { $$ = $1; }
+        | switch_stmt { $$ = $1; }
+        | continue_stmt {$$ = $1;}
+        /* Error recovery rules */
+        | error SEMICOLON { yyerrok; yyclearin; $$ = NULL; } // Recover at semicolon
+        | error '}' { yyerrok; yyclearin; $$ = NULL; }       // Recover at closing brace (for blocks)
+        /* | error { yyerrok; yyclearin; $$ = NULL; }           // Generic error recovery */
+        ;
+        ;
+
+//################################################### expressions ################################################
+expr:
+        IDENTIFIER    { $$ = new IdentifierNode(*$1, currBlock, yylineno); delete $1; }        
+        | INT_VALUE   { $$ = new LiteralNode("int", std::to_string($1)); }       
+        | FLOAT_VALUE { $$ = new LiteralNode("float", std::to_string($1)); }         
+        | BOOL_VALUE  { $$ = new LiteralNode("bool", $1 ? "true" : "false"); }
+        | STRING_VALUE { $$ = new LiteralNode("string", *$1); delete $1; }        
+        | CHAR_VALUE  { $$ = new LiteralNode("char", std::string(1, $1)); } 
+        
+        | '(' expr ')'  { $$ = $2; }
+        
+        |  function_call_stmt { $$ = $1; }
+        
+        | SUB expr  %prec UMINUS { 
+            $$ = new UnaryOpNode("-", std::unique_ptr<ASTNode>($2), yylineno);
+        }          
+        | LOGICAL_NOT expr {
+            $$ = new UnaryOpNode("!", std::unique_ptr<ASTNode>($2), yylineno);
+        }
+
+        | expr ADD expr {
+            $$ = new BinaryOpNode("+", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }
+        | expr SUB expr {
+            $$ = new BinaryOpNode("-", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }           
+        | expr MUL expr {
+            $$ = new BinaryOpNode("*", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }          
+        | expr DIV expr {
+            $$ = new BinaryOpNode("/", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }           
+        | expr BITWISE_XOR expr {
+            $$ = new BinaryOpNode("^", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }
+        | expr MOD expr {
+            $$ = new BinaryOpNode("%", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }         
+        
+        | expr LOGICAL_OR expr {
+            $$ = new BinaryOpNode("||", std::unique_ptr<ASTNode>($1), 
+                                  std::unique_ptr<ASTNode>($3), yylineno);
+        }
+        | expr LOGICAL_AND expr {
+            $$ = new BinaryOpNode("&&", std::unique_ptr<ASTNode>($1), 
+                                  std::unique_ptr<ASTNode>($3), yylineno);
+        }
+        | expr BITWISE_OR expr {
+            $$ = new BinaryOpNode("|", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }
+        | expr BITWISE_AND expr {
+            $$ = new BinaryOpNode("&", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }
+        | expr SHL expr {
+            $$ = new BinaryOpNode("<<", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }
+        | expr SHR expr {
+            $$ = new BinaryOpNode(">>", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }
+
+        | expr EQUAL expr {
+            $$ = new BinaryOpNode("==", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }  
+        | expr NOT_EQUAL expr {
+            $$ = new BinaryOpNode("!=", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        } 
+
+        | expr GT expr {
+            $$ = new BinaryOpNode(">", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }
+        | expr LT expr {
+            $$ = new BinaryOpNode("<", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }             
+        | expr GTE expr {
+            $$ = new BinaryOpNode(">=", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }
+        | expr LTE expr {
+            $$ = new BinaryOpNode("<=", std::unique_ptr<ASTNode>($1), 
+                                 std::unique_ptr<ASTNode>($3), yylineno);
+        }
+        ;               
+
+//################################################### if statement ################################################
+opt_else_if_stmt: 
+        ELSE BLOCK {
+            $$ = $2;
+        }
+        | ELSE if_stmt {
+            $$ = $2;
+        }
+        | {
+            $$ = nullptr;
+        }
+        ;
+
+if_stmt:
+        IF '(' expr ')' BLOCK opt_else_if_stmt {
+            $$ = new IfNode(std::unique_ptr<ASTNode>($3), std::unique_ptr<BlockNode>($5), std::unique_ptr<ASTNode>($6), yylineno);
+        }
+        ;
+
+//################################################### while satetemt ################################################
+while_stmt:
+        WHILE { 
+            endLabelsStack.push("while_" + std::to_string(lable_num) + "_end"); 
+            continueLabelsStack.push("while_" + std::to_string(lable_num) + "_start");
+            loopCntStack.push(lable_num);
+            lable_num++; } '(' expr ')' BLOCK {
+            $$ = new WhileNode(std::unique_ptr<ASTNode>($4), 
+                              std::unique_ptr<BlockNode>($6), 
+                              loopCntStack.top(),
+                              yylineno);
+            endLabelsStack.pop();
+            continueLabelsStack.pop();
+            loopCntStack.pop();
+        } 
+        ;
+
+//################################################### Do_While statement ################################################
+do_while_stmt:
+        DO { 
+            endLabelsStack.push("do_while_" + std::to_string(lable_num) + "_end");
+            continueLabelsStack.push("do_while_" + std::to_string(lable_num) + "_cond");
+            loopCntStack.push(lable_num); 
+            lable_num++; } BLOCK WHILE '(' expr ')' SEMICOLON {
+            $$ = new DoWhileNode(std::unique_ptr<BlockNode>($3), 
+                                std::unique_ptr<ASTNode>($6), 
+                                loopCntStack.top(),
+                                yylineno);
+            endLabelsStack.pop();
+            continueLabelsStack.pop();
+            loopCntStack.pop();
+        }
+        ;
+
+//################################################### for statement ################################################
+for_stmt:
+    FOR '(' {
+        // Create a new block for the for loop (both parentheses stmts and body)
+        BlockNode* newBlock = new BlockNode(++blockIdCounter, currBlock);
+        currBlock = newBlock;
+        endLabelsStack.push("for_" + std::to_string(lable_num) + "_end"); 
+        continueLabelsStack.push("for_" + std::to_string(lable_num) + "_update");
+        loopCntStack.push(lable_num);
+        lable_num++;
+    } 
+    stmt stmt stmt ')' 
+    // Note: We don't create a new block here since we'll use the block we already created
+    '{' program '}' {
+        // Store the for loop stmts
+        std::unique_ptr<ASTNode> initStmt($4);
+        std::unique_ptr<ASTNode> condStmt($5);
+        std::unique_ptr<ASTNode> updateStmt($6);
+        
+        // Use the current block for the body
+        BlockNode* bodyBlock = currBlock;
+        
+        // Restore parent block
+        currBlock = currBlock->getParent();
+        
+        // Create the ForNode
+        $$ = new ForNode(std::move(initStmt), 
+                         std::move(condStmt), 
+                         std::move(updateStmt), 
+                         std::unique_ptr<BlockNode>(bodyBlock), 
+                         loopCntStack.top(),
+                         yylineno);
+        endLabelsStack.pop();
+        continueLabelsStack.pop();
+        loopCntStack.pop();
+    }
+    ;
+
+//################################################### switch statement ################################################
+switch_stmt:
+    SWITCH {
+        // Clear previous case collections
+        caseexprs.clear();
+        defaultBlock = nullptr;
+        
+        // Push the end label for the switch (used by break stmts)
+        endLabelsStack.push("switch_" + std::to_string(lable_num) + "_end"); 
+        lable_num++;
+    } '(' expr ')' '{' CASES '}' {
+        // Create the switch node with collected cases
+        $$ = new SwitchNode(std::unique_ptr<ASTNode>($4), 
+                           std::move(caseexprs), 
+                           std::move(defaultBlock),
+                           endLabelsStack.top(),
+                           currBlock,
+                           yylineno);
+        endLabelsStack.pop();
+    }
+    ;
+
+CASES:
+    CASES case_stmt
+    | /* empty */
+    ;
+
+case_stmt:
+    CASE expr ':' BLOCK {
+        // Add case to the collection
+        caseexprs.push_back(std::make_pair(
+            std::unique_ptr<ASTNode>($2),
+            std::unique_ptr<BlockNode>($4)
+        ));
+        $$ = nullptr; // No need to return a value for this rule
+    }
+    | DEFAULT ':' BLOCK {
+        if(defaultBlock != nullptr) {
+            ErrorHandler::getInstance()->reportError("Default Case already exist", yylineno);
+        }
+        // Set default case
+        defaultBlock = std::unique_ptr<BlockNode>($3);
+        $$ = nullptr; // No need to return a value for this rule
+    }
+    ;
+
+break_stmt:
+        BREAK SEMICOLON { 
+            if(!endLabelsStack.empty()) $$ = new BreakNode(endLabelsStack.top(), yylineno); 
+            else ErrorHandler::getInstance()->reportError("Break outside of a loop", yylineno);
+            }
+        ;
+
+//################################################### continue statement ################################################
+continue_stmt:
+        CONTINUE SEMICOLON { 
+            if(!continueLabelsStack.empty()) $$ = new ContinueNode(continueLabelsStack.top(), yylineno); 
+            else ErrorHandler::getInstance()->reportError("Continue outside of a loop", yylineno);
+            
+            }
+        ;
+
+//################################################### print statement ################################################
+print_stmt:
+        PRINT '(' expr ')' SEMICOLON {
+            $$ = new PrintNode(std::unique_ptr<ASTNode>($3));
+        }
+        ;
+
+//################################################### variable types ################################################
+type:
+        INT         { $$ = new std::string("int");   }
+        | FLOAT     { $$ = new std::string("float"); }
+        | BOOL      { $$ = new std::string("bool");  }
+        | STRING    { $$ = new std::string("string");}
+        | CHAR      { $$ = new std::string("char");  }
+        | VOID      { $$ = new std::string("void");  }
+        ;
+                
+//################################################### function call statement ################################################
+function_call_stmt:
+    IDENTIFIER '(' {
+        // Clear the arguments vector before starting to collect arguments
+        currentArguments.clear();
+    } ARGUMENTS ')' {
+        // Create the function call node with collected arguments
+        $$ = new FunctionCallNode(*$1, getAndClearArguments(), currBlock, yylineno);
+        delete $1;
+    }
+    ;       
+
+ARGUMENTS:      
+    expr ',' {
+        // Store the expr as an argument
+        currentArguments.push_back(std::unique_ptr<ASTNode>($1));
+    } ARGUMENTS 
+    | expr {
+        // Store the last expr as an argument
+        currentArguments.push_back(std::unique_ptr<ASTNode>($1));
+    }
+    | /* empty */ {
+        // No arguments
+    }
+    ;
+
+//################################################### function declaration statement ################################################
+
+function_declr_stmt:
+    type IDENTIFIER '(' {
+        // Clear parameters before collecting new ones
+        curr_function_name = *$2;
+        curr_function_type = *$1;
+        function_declared = true;
+        if(currBlock->getParent() != nullptr) {
+            ErrorHandler::getInstance()->reportError("Function " + curr_function_name + " should be global", yylineno);
+        }
+        clearParameters();
+    } ARGS ')' BLOCK {
+
+        if(!curr_func_return_shown && curr_function_type != "void") {
+            ErrorHandler::getInstance()->reportError("Function " + curr_function_name + " should return " + curr_function_type, yylineno);            
+        }
+        // Cre  ate the function declaration node with collected parameters
+        $$ = new FunctionDeclarationNode(*$1, *$2, currentParameters, 
+                                       std::unique_ptr<BlockNode>($7), 
+                                       currBlock, yylineno);
+        curr_func_return_shown = false;
+        curr_function_name = "";
+        curr_function_type = "";
+        function_declared = false;
+        delete $1;
+        delete $2;
+    };
+
+ARGS:
+    ARG_DECL ',' ARGS
+    | ARG_DECL
+    | /* empty */
+    ;
+
+ARG_DECL:
+    type IDENTIFIER {
+        // Add parameter to the current parameter list
+        addParameter(*$1, *$2);
+        delete $1;
+        delete $2;
+    }
+    ;
+
+return_stmt:
+    RETURN {
+        if(!function_declared) {
+            ErrorHandler::getInstance()->reportError("NO function has been declared", yylineno);
+        }
+        curr_func_return_shown = true;
+        $$ = new ReturnNode(nullptr, currBlock, curr_function_type, yylineno);
+    }
+    | RETURN expr {
+        // Return with expr
+        if(!function_declared) {
+            ErrorHandler::getInstance()->reportError("NO function has been declared", yylineno);
+        }
+        curr_func_return_shown = true;
+
+        $$ = new ReturnNode(std::unique_ptr<ASTNode>($2), currBlock, curr_function_type, yylineno);
+    }
+    ;        
+
+//###################################################  assignments statement ################################################
+assign_stmt:
+        IDENTIFIER EQ expr SEMICOLON { 
+            $$ = new AssignmentNode(*$1, std::unique_ptr<ASTNode>($3), currBlock, yylineno);
+            delete $1;
+        } 
+        ;
+
+//###################################################  declaration statement ################################################
+declr_stmt:
+        type IDENTIFIER EQ expr SEMICOLON { 
+            $$ = new DeclarationNode(*$1, *$2, false, std::unique_ptr<ASTNode>($4), currBlock, yylineno);
+            delete $1;
+            delete $2;
+        }
+        | type IDENTIFIER SEMICOLON { 
+            $$ = new DeclarationNode(*$1, *$2, false, nullptr, currBlock, yylineno);
+            delete $1;
+            delete $2;
+        }
+        | CONSTANT type IDENTIFIER EQ expr SEMICOLON { 
+            $$ = new DeclarationNode(*$2, *$3, true, std::unique_ptr<ASTNode>($5), currBlock, yylineno);
+            delete $2;
+            delete $3;
+        }
+        | CONSTANT type IDENTIFIER SEMICOLON { 
+            ErrorHandler::getInstance()->reportError("Error declaring const variable without initialization", yylineno);
+        }
+        ;
+
+%%

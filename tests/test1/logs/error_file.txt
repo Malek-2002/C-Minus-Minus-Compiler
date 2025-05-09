@@ -1,0 +1,2 @@
+Warning at line 88: Function main  is declared but never used
+Warning at line 11: Function func  is declared but never used

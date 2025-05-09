@@ -1,0 +1,27 @@
+
+int x = 1;
+
+// x = x + "string"; // type mismatch error
+
+// int x = 3; // redeclaration of x;
+
+//return; // return without define function;
+
+//continue; // continue without defined loop
+
+//break; // break without defined loop
+
+
+//int x = 2;
+
+switch(x) {
+    case 1: {
+
+    }
+    case 1: { // erorr case already exist
+
+    }
+    default: {}
+    default: {} //errror default already defined
+}
+

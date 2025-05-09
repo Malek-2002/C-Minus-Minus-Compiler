@@ -1,0 +1,6 @@
+ID,Name,Type,DataType,Line,Scope,isInitialized,isUsed,Value
+4,sel,variable,int,3,blk0.blk1,true,true,2
+3,x,variable,int,4,blk0.blk1,true,true,0
+2,y,variable,int,5,blk0.blk1,true,true,0
+1,b1,variable,bool,22,blk0.blk1,true,true,true
+5,main,function,int,32,blk0,true,false,

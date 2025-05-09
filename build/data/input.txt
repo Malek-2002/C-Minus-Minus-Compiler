@@ -1,0 +1,52 @@
+
+int x = 1;
+
+x = x + "string"; // type mismatch error
+
+int x = 3; // redeclaration of x;
+
+return; // return without define function;
+
+continue; // continue without defined loop
+
+break; // break without defined loop
+
+void func1 (int x, int y) {
+    return 1;
+}
+
+int func2 (int x, int y) {
+    // no return 
+}
+
+int func3 (int x, int y) {
+    return; // return void mismatch
+}
+
+// return type mismatch
+int func4 (int x, int y) {
+    return "string";
+}
+
+int x = 2;
+
+switch(x) {
+    case 1: {
+
+    }
+    case 1: { // erorr case already exist
+
+    }
+    default: {}
+    default: {} //errror default already defined
+}
+
+
+func1(1); // error argument num mismatch
+func1("string", 1); // errror argument passed mismatch;
+
+int y = "a" == 1;
+
+int z;
+int temp = z; // waning using unintilazed var z
+

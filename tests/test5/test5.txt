@@ -1,0 +1,32 @@
+int main()
+{
+    const int sel=2;
+    int x = 0;
+    int y = 0 ;
+    switch(sel){
+        case 1: {
+            x = x + 1; // postfix ++ operator not supported;
+        }
+        case 2: {
+            x = x + 1; // prefix ++ operator not supported; 
+            break;
+        }
+        case 3: {
+            y = y + 1; // postfix ++ operator not supported;
+        }
+        default: {
+            y = y + 1; //prefix ++ operator not supported; 
+        }
+    }
+
+    bool b1 = true;
+    if(b1){
+        x =x + 1; // Augmented Operations Not supported
+    }else if(b1&&!b1){
+        x = x + 2; // Augmented Operations Not supported
+    }else{
+        x =x + 3; // Augmented Operations Not supported
+    }
+    
+    return x; 
+}

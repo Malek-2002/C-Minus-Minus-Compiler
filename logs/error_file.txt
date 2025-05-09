@@ -1,0 +1,18 @@
+Error at line 4: Function func66 should be global
+Error at line 6: Function  should return 
+Error at line 27: Function func5 should return int
+Error at line 2: Function declared to return 'void' but return value provided
+Warning at line 10: Variable b in scope blk0.blk3 is declared but never used
+Warning at line 10: Variable a in scope blk0.blk3 is declared but never used
+Error at line 12: Function 'func2' called with wrong number of arguments (expected 2, got 0)
+Error at line 14: Function 'func2' called with wrong number of arguments (expected 2, got 1)
+Error at line 19: Return type mismatch: expected 'int' but got 'string'
+Warning at line 20: Variable b in scope blk0.blk4 is declared but never used
+Warning at line 20: Variable a in scope blk0.blk4 is declared but never used
+Error at line 23: Function declared to return 'void' but return value provided
+Warning at line 24: Variable b in scope blk0.blk5 is declared but never used
+Warning at line 24: Variable a in scope blk0.blk5 is declared but never used
+Warning at line 27: Function func5  is declared but never used
+Warning at line 24: Function func4  is declared but never used
+Warning at line 20: Function func3  is declared but never used
+Warning at line 6: Function func1  is declared but never used

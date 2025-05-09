@@ -1,0 +1,5 @@
+Warning at line 29: Variable scoped in scope blk0.blk6.blk7 is declared but never used
+Warning at line 26: Variable flag2 in scope blk0.blk6 is declared but never used
+Warning at line 25: Variable flag1 in scope blk0.blk6 is declared but never used
+Warning at line 47: Function main  is declared but never used
+Warning at line 15: Function is_even  is declared but never used

@@ -1,0 +1,17 @@
+ID,Name,Type,DataType,Line,Scope,isInitialized,isUsed,Value
+1,a,variable,int,3,blk0.blk1.blk2,true,true,1
+2,b,parameter,int,7,blk0.blk1,true,true,
+3,a,parameter,int,7,blk0.blk1,true,true,
+16,add,function,int,7,blk0,true,true,
+15,func,function,void,11,blk0,true,false,
+13,i,variable,int,15,blk0.blk4,true,true,0
+12,j,variable,int,16,blk0.blk4,true,true,5
+10,flag,variable,bool,17,blk0.blk4,true,true,true
+9,ch,variable,char,18,blk0.blk4,true,true,X
+7,f,variable,float,19,blk0.blk4,true,true,2.500000
+11,s,variable,string,20,blk0.blk4,true,true,foo
+6,t,variable,string,21,blk0.blk4,true,true,bar
+4,i,variable,int,24,blk0.blk4.blk5,true,true,3
+5,k,variable,int,28,blk0.blk4.blk6,true,true,0
+8,q,variable,bool,82,blk0.blk4,true,true,true
+14,main,function,int,88,blk0,true,false,

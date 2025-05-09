@@ -1,0 +1,47 @@
+int add(int a, int b, int c){
+    return a + b + c;
+}
+
+float power(float base, int exp){ // function default values not supported
+    float res= 1.0;
+    for(int i=0; i < exp; i = i + 1;){
+        res = res * base;
+    }
+    return res;
+}
+
+bool is_even(int n){
+    return (n%2)==0;
+}
+
+bool toggle(bool v){
+    return !v;
+}
+
+int main()
+{
+    int i=3;
+    float f = power(2.0, 3);
+    bool flag1 = toggle(true); // function default values not supported
+    bool flag2 = toggle(false);
+
+    {
+        int scoped = 5;
+        {
+            int scoped =10;
+            i = i + scoped;
+            scoped = scoped + add(1,2,3);
+            scoped = scoped + add(1, 4, 5); // function default values not supported
+            scoped = scoped + add(1, 8, 9); // function default values not supported
+        }
+    }
+
+    f=f * power(1.5, 2); // Augmented Operations not supported
+    i = i<< 1;
+    i = i >> 2;
+    i = i | 3;
+    i = i & 7;
+    i = i ^ 1;
+
+    return i;
+}

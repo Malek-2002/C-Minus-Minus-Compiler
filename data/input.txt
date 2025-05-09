@@ -1,0 +1,27 @@
+void func1() {
+    return 1;
+    
+    void func66() {
+    }
+}
+
+void func2(int a, int b) {
+	return;
+}
+
+func2();
+
+func2(1);
+
+func2(1, 2);
+
+int func3(int a, int b) {
+	return "string";
+}
+
+void func4 (int a, int b) {
+	return a + b;
+}
+
+int func5() {
+}
