@@ -1,8 +1,0 @@
-/home/malek/work/zcompi/calculator/build/CMakeFiles/calc.dir
-/home/malek/work/zcompi/calculator/build/CMakeFiles/run.dir
-/home/malek/work/zcompi/calculator/build/CMakeFiles/edit_cache.dir
-/home/malek/work/zcompi/calculator/build/CMakeFiles/rebuild_cache.dir
-/home/malek/work/zcompi/calculator/build/CMakeFiles/list_install_components.dir
-/home/malek/work/zcompi/calculator/build/CMakeFiles/install.dir
-/home/malek/work/zcompi/calculator/build/CMakeFiles/install/local.dir
-/home/malek/work/zcompi/calculator/build/CMakeFiles/install/strip.dir
